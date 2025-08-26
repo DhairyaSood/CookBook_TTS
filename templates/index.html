@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎙️ Voice Cookbook</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️ Voice-Activated Cookbook</h1>
+    <p class="tagline">Ask me what you’d like to cook, and I’ll walk you through it step by step!</p>
+
+    <form id="queryForm">
+      <input id="queryInput" type="text" placeholder="e.g., How do I make pizza?" required>
+      <button type="submit">🍳 Ask</button>
+    </form>
+
+    <div id="responseBox">
+      <h2>Chef says:</h2>
+      <p id="output">Hello! Welcome to your voice-activated cookbook. What would you like to cook today?</p>
+    </div>
+
+    <audio id="audioPlayer" controls></audio>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

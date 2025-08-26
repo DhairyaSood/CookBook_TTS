@@ -1,60 +1,56 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const chatBox = document.getElementById('chat-box');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
+  const form = document.getElementById("queryForm");
+  const input = document.getElementById("queryInput");
+  const outputDiv = document.getElementById("output");
+  const audioPlayer = document.getElementById("audioPlayer");
 
-    // Function to add a message to the chat box
-    const addMessage = (text, sender) => {
-        const message = document.createElement('div');
-        message.classList.add('message', `${sender}-message`);
-        message.innerText = text;
-        chatBox.appendChild(message);
-        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the latest message
-    };
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = input.value.trim();
+    if (!query) return;
 
-    // Function to handle sending a message
-    const sendMessage = async () => {
-        const text = userInput.value.trim();
-        if (text === "") return;
+    outputDiv.textContent = "👩‍🍳 Thinking... whipping up a recipe for you!";
+    
+    try {
+      const response = await fetch("/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
 
-        addMessage(text, 'user');
-        userInput.value = '';
+      if (!response.ok) {
+        outputDiv.textContent = "⚠️ Error: " + (await response.text());
+        return;
+      }
 
-        try {
-            const response = await fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: text })
-            });
-            const data = await response.json();
-            addMessage(data.reply, 'bot');
-        } catch (error) {
-            console.error('Error:', error);
-            addMessage('Sorry, something went wrong. Please try again.', 'bot');
-        }
-    };
+      const data = await response.json();
 
-    // Event listeners
-    sendBtn.addEventListener('click', sendMessage);
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
+      if (data.error) {
+        outputDiv.textContent = "⚠️ " + data.error;
+        return;
+      }
 
-    // Start the conversation on page load
-    const startConversation = async () => {
-        try {
-            const response = await fetch('/start', { method: 'POST' });
-            const data = await response.json();
-            addMessage(data.reply, 'bot');
-        } catch (error) {
-            console.error('Error starting conversation:', error);
-            addMessage('Welcome! I seem to be having trouble starting. Please refresh.', 'bot');
-        }
-    };
+      // Show text reply
+      outputDiv.textContent = data.text || "No text reply.";
 
-    startConversation();
+      // Play audio if available
+      if (data.audio) {
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(data.audio), (c) => c.charCodeAt(0))],
+          { type: "audio/mpeg" }
+        );
+        const url = URL.createObjectURL(audioBlob);
+        audioPlayer.src = url;
+        audioPlayer.play().catch((err) => {
+          console.error("Audio playback failed:", err);
+          outputDiv.textContent += "\n⚠️ Could not play audio.";
+        });
+      } else {
+        outputDiv.textContent += "\n⚠️ No audio generated.";
+      }
+    } catch (err) {
+      console.error(err);
+      outputDiv.textContent = "⚠️ Error: " + err.message;
+    }
+  });
 });
